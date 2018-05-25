@@ -1,0 +1,48 @@
+---
+title: "Vignette Title"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(tidycge)
+library(dplyr)
+library(purrr)
+library(readr)
+library(readxl)
+library(stringr)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r}
+clean_ncc_sheet(path = "../data-raw/NCC-V2-0-20171220-V1[1].xlsx", sheet = "Classe 10") %>%
+  glimpse()
+
+```
+
+
+```{r}
+table_ncc <- excel_sheets(path = "../data-raw/NCC-V2-0-20171220-V1[1].xlsx") %>%
+  keep(
+  .p = function(x) str_detect(pattern = "Classe[[:blank:]][[:digit:]]{2}", string = x)
+  ) %>%
+  map_df(
+    .f = function(x) clean_ncc_sheet(path = "../data-raw/NCC-V2-0-20171220-V1[1].xlsx", sheet = x) 
+    ) 
+```
+
+
+```{r}
+table_ncc %>%
+  write_csv(path = "../data-raw/tidy_ncc.csv")
+```
+
+
