@@ -3,31 +3,23 @@ library("dplyr")
 library("tricky")
 library("readxl")
 library("tidyr")
-
-read_csv(
-  file = "data-raw/tidy_ncc.csv"
-  ) %>% 
-  glimpse()
-
-read_csv(
-  file = "data-raw/tidy_ncc.csv", 
-  col_types = cols(numero = col_character())
-  ) %>% 
-  glimpse()
-
-
-table_cge <- read_excel(path = "data-raw/2012 - 2017_Balances des comptes de l'État.xlsx") %>% 
-  set_standard_names() 
-
-table_cge %>% 
-  glimpse()
-
 library(ggplot2)
 
 table_cge %>% 
   filter(compte == "6066620000") %>%
-  group_by(year) %>%
-  summarise(balance = sum(balance))  %>%
+  group_by(libelle_ministere) %>%
+  summarise(balance = sum(balance)) %>%
+  arrange(desc(balance)) %>%
+  filter(is.na(libelle_ministere) == FALSE) %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = reorder(libelle_ministere, balance), y = balance)
+  ) + 
+  scale_y_continuous(labels = function(x) {format(x, scientific = FALSE, big.mark = " ")}) + 
+  coord_flip()
+
+
+%>%
   ggplot() + 
   geom_col(
     mapping = aes(x = year, y = balance)
