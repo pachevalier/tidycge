@@ -2,8 +2,8 @@
 title: "Où va mon argent ?"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
-    vertical_layout: fill
+    orientation: rows
+    vertical_layout: scroll
 ---
 
 ```{r setup, include=FALSE}
@@ -11,21 +11,47 @@ library(flexdashboard)
 library(DT)
 library(readr)
 library(dplyr)
+library(readxl)
+library(tricky)
+
+table_cge <- read_excel(path = "data-raw/2012 - 2017_Balances des comptes de l'État.xlsx") %>% 
+  set_standard_names() %>%
+  tidyr::gather(
+    key = year, 
+    value = balance, -
+      c(postes, sous_postes, compte, nature_budgetaire, programme, libelle_ministere)
+    ) %>%
+    mutate(
+      year = as.numeric(
+        sub(
+          pattern = "balance\\_sortie\\_([[:digit:]]{4})", 
+          replacement = "\\1", 
+          x = year)
+        )
+    )
+
+table_ncc <- read_csv(
+  file = "data-raw/tidy_ncc.csv", 
+  col_types = cols(numero = col_character())
+  )
+```
+
+Liste des ministères
+======================================================================
+
+```{r}
+table_cge %>% 
+  distinct(libelle_ministere) %>% 
+  datatable()
 ```
 
 Liste des comptes PCE
 ======================================================================
 
-Row 
------------------------------------------------------------------------
-
 ### Liste des comptes PCE
 
 ```{r}
-read_csv(
-  file = "data-raw/tidy_ncc.csv", 
-  col_types = cols(numero = col_character())
-  ) %>% 
+table_ncc %>% 
   distinct(numero, libelle_long_complet_du_compte_cible) %>% 
   datatable()
 ```
@@ -33,13 +59,38 @@ read_csv(
 Liste achats non stockés
 ======================================================================
 
+Row {data-height=1000}
+----------------------------------------------------------------------
+
+### Répartition par ministère
+
+```{r}
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+    ) %>%
+  group_by(libelle_ministere) %>%
+  summarise(
+    balance = sum(balance)
+  ) %>% 
+  arrange(desc(balance)) %>%
+  datatable() %>%
+  formatRound(
+    columns = ~ balance, 
+    mark = " ", 
+    dec.mark = ",", 
+    digit = 0
+  )
+```
+
+Row {data-height=1000}
+----------------------------------------------------------------------
+
 ### Focus compte de charge 6
 
 ```{r}
-read_csv(
-  file = "data-raw/tidy_ncc.csv", 
-  col_types = cols(numero = col_character())
-  ) %>% 
+table_ncc %>% 
   filter(grepl(pattern = "^606", x = numero)) %>%
   distinct(numero, libelle_long_complet_du_compte_cible) %>% 
   datatable()

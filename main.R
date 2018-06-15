@@ -22,4 +22,21 @@ table_cge <- read_excel(path = "data-raw/2012 - 2017_Balances des comptes de l'Ã
 table_cge %>% 
   glimpse()
 
-table_cge 
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+    ) %>%
+  group_by(libelle_ministere) %>%
+  summarise(
+    balance = sum(balance)
+  ) %>% 
+  arrange(desc(balance)) %>%
+  datatable()
+
+
+
+
+table_cge %>% 
+  glimpse()
+
