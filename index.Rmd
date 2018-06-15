@@ -13,6 +13,9 @@ library(readr)
 library(dplyr)
 ```
 
+Liste des comptes PCE
+======================================================================
+
 Row 
 -----------------------------------------------------------------------
 
@@ -26,6 +29,9 @@ read_csv(
   distinct(numero, libelle_long_complet_du_compte_cible) %>% 
   datatable()
 ```
+
+Liste des comptes PCE compte charge
+======================================================================
 
 ### Focus compte de charge 6
 
