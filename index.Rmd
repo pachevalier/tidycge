@@ -46,9 +46,7 @@ table_plr <- read_excel(path = "data-raw/PLR2017-Exec-Min_T2_HT2_ETPT-BG_BA.xlsx
   set_standard_names() %>%
   mutate(
     etpt = parse_French_number(exec_etpt_2017_rap_2017)
-    ) %>%
-  group_by(ministere_au_1er_janvier_2017) %>%
-  summarise(etpt = sum(etpt, na.rm = TRUE))
+    ) 
 ```
 
 
@@ -177,7 +175,11 @@ table_cge %>%
   group_by(libelle_ministere) %>%
   summarise(balance = sum(balance)) %>%
   left_join(
-    y = table_plr, 
+    y = table_plr %>% 
+      group_by(ministere_au_1er_janvier_2017) %>%
+      summarise(
+        etpt = sum(etpt, na.rm = TRUE)
+        ), 
     by = c("libelle_ministere" = "ministere_au_1er_janvier_2017")
     ) %>%
   filter(etpt != 0, is.na(etpt) == FALSE) %>%
