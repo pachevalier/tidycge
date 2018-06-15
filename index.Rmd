@@ -1,0 +1,28 @@
+---
+title: "Où va mon argent ?"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(DT)
+library(readr)
+library(dplyr)
+```
+
+Row 
+-----------------------------------------------------------------------
+
+### Liste des comptes PCE
+
+```{r}
+read_csv(
+  file = "data-raw/tidy_ncc.csv", 
+  col_types = cols(numero = col_character())
+  ) %>% 
+  distinct(numero, libelle_long_complet_du_compte_cible) %>% 
+  datatable()
+```
