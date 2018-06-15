@@ -38,6 +38,124 @@ table_ncc <- read_csv(
   )
 ```
 
+
+Zoom sur les achats non stockés
+======================================================================
+
+Row {data-height=100}
+----------------------------------------------------------------------
+
+### Achats non stockés
+
+```{r, echo=FALSE}
+achats <- table_cge %>% 
+     filter(
+      grepl(pattern = "^606", x = compte), 
+       year == 2017
+    ) %>%
+    summarise(balance = format(sum(balance), scientific = FALSE, big.mark = " ")) %>%
+    .$balance
+valueBox(achats, icon = "fa-euro")
+```
+
+Row {data-height=600}
+----------------------------------------------------------------------
+
+### Répartition par ministère
+
+```{r}
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+    ) %>%
+  group_by(libelle_ministere) %>%
+  summarise(
+    balance = sum(balance)
+  ) %>% 
+  arrange(desc(balance)) %>%
+  datatable() %>%
+  formatRound(
+    columns = ~ balance, 
+    mark = " ", 
+    dec.mark = ",", 
+    digit = 0
+  )
+```
+
+
+Row {data-height=600}
+----------------------------------------------------------------------
+
+### Répartition par compte PCE
+
+```{r}
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+  ) %>%
+  group_by(compte) %>%
+  summarise(balance = sum(balance)) %>%
+  left_join(
+    y = select(table_ncc, numero, libelle_long_complet_du_compte_cible), 
+    by = c("compte" = "numero")
+    ) %>%
+  select(compte,  libelle_long_complet_du_compte_cible, balance) %>%
+  arrange(desc(balance)) %>%
+  datatable() %>% 
+  DT::formatRound(columns = ~ balance, digits = 0, mark = " ")
+```
+
+Zoom sur le papier
+======================================================================
+
+Row {data-height=300}
+----------------------------------------------------------------------
+
+### Augmentation de dépenses de papier
+
+```{r}
+augmentation <- 29240093 / 28523497 * 100  - 100
+valueBox(round(augmentation, 1), icon = "fa-percent")
+```
+
+### Dépenses de papier
+
+```{r}
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(year) %>%
+  summarise(balance = sum(balance))  %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = year, y = balance)
+    ) + 
+  scale_y_continuous(labels = function(x) {format(x = x, scientific = FALSE, big.mark = " ")}) + 
+  theme_fivethirtyeight()
+```
+
+Row {data-height=300}
+----------------------------------------------------------------------
+
+### Dépenses de papier par ministère en 2017
+
+```{r}
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(libelle_ministere) %>%
+  summarise(balance = sum(balance)) %>%
+  arrange(desc(balance)) %>%
+  filter(is.na(libelle_ministere) == FALSE) %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = reorder(libelle_ministere, balance), y = balance)
+  ) + 
+  scale_y_continuous(labels = function(x) {format(x, scientific = FALSE, big.mark = " ")}) + 
+  coord_flip()
+```
+
+
 Liste des ministères
 ======================================================================
 
@@ -66,111 +184,3 @@ table_ncc %>%
   distinct(numero, libelle_long_complet_du_compte_cible) %>% 
   datatable()
 ```
-
-Achats non stockés
-======================================================================
-
-Row {data-height=100}
-----------------------------------------------------------------------
-
-### Achats non stockés
-
-```{r, echo=FALSE}
-achats <- table_cge %>% 
-     filter(
-      grepl(pattern = "^606", x = compte), 
-       year == 2017
-    ) %>%
-    summarise(balance = format(sum(balance), scientific = FALSE, big.mark = " ")) %>%
-    .$balance
-valueBox(achats, icon = "fa-euro")
-```
-
-
-Row {data-height=300}
-----------------------------------------------------------------------
-
-### Augmentation de dépenses de papier
-
-```{r}
-augmentation <- 29240093 / 28523497 * 100  - 100
-valueBox(round(augmentation, 1), icon = "fa-percent")
-```
-
-
-### Dépenses de papier
-
-```{r}
-table_cge %>% 
-  filter(compte == "6066620000") %>%
-  group_by(year) %>%
-  summarise(balance = sum(balance))  %>%
-  ggplot() + 
-  geom_col(
-    mapping = aes(x = year, y = balance)
-    ) + 
-  scale_y_continuous(labels = function(x) {format(x = x, scientific = FALSE, big.mark = " ")}) + 
-  theme_fivethirtyeight()
-```
-
-Row {data-height=600}
-----------------------------------------------------------------------
-
-### Répartition par ministère
-
-```{r}
-table_cge %>% 
-  filter(
-    grepl(pattern = "^606", x = compte), 
-    year == 2017
-    ) %>%
-  group_by(libelle_ministere) %>%
-  summarise(
-    balance = sum(balance)
-  ) %>% 
-  arrange(desc(balance)) %>%
-  datatable() %>%
-  formatRound(
-    columns = ~ balance, 
-    mark = " ", 
-    dec.mark = ",", 
-    digit = 0
-  )
-```
-
-Row {data-height=600}
-----------------------------------------------------------------------
-
-### Répartition par compte PCE
-
-```{r}
-table_cge %>% 
-  filter(
-    grepl(pattern = "^606", x = compte), 
-    year == 2017
-  ) %>%
-  group_by(compte) %>%
-  summarise(balance = sum(balance)) %>%
-  left_join(
-    y = select(table_ncc, numero, libelle_long_complet_du_compte_cible), 
-    by = c("compte" = "numero")
-    ) %>%
-  select(compte,  libelle_long_complet_du_compte_cible, balance) %>%
-  arrange(desc(balance)) %>%
-  datatable() %>% 
-  DT::formatRound(columns = ~ balance, digits = 0, mark = " ")
-```
-
-
-Row {data-height=1000}
-----------------------------------------------------------------------
-
-### Focus compte de charge 6
-
-```{r}
-table_ncc %>% 
-  filter(grepl(pattern = "^606", x = numero)) %>%
-  distinct(numero, libelle_long_complet_du_compte_cible) %>% 
-  datatable()
-```
-
