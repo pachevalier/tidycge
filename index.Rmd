@@ -90,7 +90,7 @@ valueBox(achats, icon = "fa-euro")
 Row {data-height=300}
 ----------------------------------------------------------------------
 
-### Augmentation de dépénses de papier
+### Augmentation de dépenses de papier
 
 ```{r}
 augmentation <- 29240093 / 28523497 * 100  - 100
