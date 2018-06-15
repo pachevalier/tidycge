@@ -30,7 +30,7 @@ read_csv(
   datatable()
 ```
 
-Liste des comptes PCE compte charge
+Liste achats non stockés
 ======================================================================
 
 ### Focus compte de charge 6
@@ -40,7 +40,7 @@ read_csv(
   file = "data-raw/tidy_ncc.csv", 
   col_types = cols(numero = col_character())
   ) %>% 
-  filter(grepl(pattern = "^6", x = numero)) %>%
+  filter(grepl(pattern = "^606", x = numero)) %>%
   distinct(numero, libelle_long_complet_du_compte_cible) %>% 
   datatable()
 ```
