@@ -26,6 +26,36 @@ table_cge %>%
   filter(
     grepl(pattern = "^606", x = compte), 
     year == 2017
+  ) %>%
+  View()
+
+table_cge %>% 
+  filter(
+    grepl(pattern = "^6", x = compte), 
+    year == 2017
+  ) %>%
+  summarise(balance = format(sum(balance), scientific = FALSE, big.mark = " "))
+
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+  ) %>%
+  summarise(balance = format(sum(balance), scientific = FALSE, big.mark = " "))
+
+
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+  ) %>%
+  summarise(balance = french_formatting(sum(balance)))
+
+
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
     ) %>%
   group_by(libelle_ministere) %>%
   summarise(

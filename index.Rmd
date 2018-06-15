@@ -45,6 +45,15 @@ table_cge %>%
   datatable()
 ```
 
+Liste des programmes
+======================================================================
+
+```{r}
+table_cge %>% 
+  distinct(programme) %>% 
+  datatable()
+```
+
 Liste des comptes PCE
 ======================================================================
 
@@ -56,8 +65,24 @@ table_ncc %>%
   datatable()
 ```
 
-Liste achats non stockés
+Achats non stockés
 ======================================================================
+
+Row {data-height=1000}
+----------------------------------------------------------------------
+
+### Achats non stockés
+
+```{r, echo=FALSE}
+achats <- table_cge %>% 
+     filter(
+      grepl(pattern = "^606", x = compte), 
+       year == 2017
+    ) %>%
+    summarise(balance = format(sum(balance), scientific = FALSE, big.mark = " ")) %>%
+    .$balance
+valueBox(achats, icon = "fa-euro")
+```
 
 Row {data-height=1000}
 ----------------------------------------------------------------------
