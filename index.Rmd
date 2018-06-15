@@ -36,6 +36,19 @@ table_ncc <- read_csv(
   file = "data-raw/tidy_ncc.csv", 
   col_types = cols(numero = col_character())
   )
+
+french_formatting <- function (x) {
+  output <- stringr::str_trim(format(x, big.mark = " ", decimal.mark = ",", scientific = FALSE))
+  return(output)
+  }
+
+table_plr <- read_excel(path = "data-raw/PLR2017-Exec-Min_T2_HT2_ETPT-BG_BA.xlsx") %>%
+  set_standard_names() %>%
+  mutate(
+    etpt = parse_French_number(exec_etpt_2017_rap_2017)
+    ) %>%
+  group_by(ministere_au_1er_janvier_2017) %>%
+  summarise(etpt = sum(etpt, na.rm = TRUE))
 ```
 
 
@@ -153,6 +166,33 @@ table_cge %>%
   ) + 
   scale_y_continuous(labels = function(x) {format(x, scientific = FALSE, big.mark = " ")}) + 
   coord_flip()
+```
+
+
+### Dépenses de papier par agent par ministère
+
+```{r}
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(libelle_ministere) %>%
+  summarise(balance = sum(balance)) %>%
+  left_join(
+    y = table_plr, 
+    by = c("libelle_ministere" = "ministere_au_1er_janvier_2017")
+    ) %>%
+  filter(etpt != 0, is.na(etpt) == FALSE) %>%
+  mutate(balance_par_agent = balance / etpt) %>%
+  arrange(desc(balance_par_agent)) %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(
+      x = reorder(libelle_ministere, balance_par_agent), 
+      y = balance_par_agent
+      )
+    ) + 
+  coord_flip() + 
+  scale_x_discrete(name = "Ministère") + 
+  scale_y_continuous(name = "Dépense de papier par agent")
 ```
 
 
