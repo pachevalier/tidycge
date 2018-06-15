@@ -13,6 +13,8 @@ library(readr)
 library(dplyr)
 library(readxl)
 library(tricky)
+library(ggplot2)
+library(ggthemes)
 
 table_cge <- read_excel(path = "data-raw/2012 - 2017_Balances des comptes de l'État.xlsx") %>% 
   set_standard_names() %>%
@@ -68,7 +70,7 @@ table_ncc %>%
 Achats non stockés
 ======================================================================
 
-Row {data-height=1000}
+Row {data-height=100}
 ----------------------------------------------------------------------
 
 ### Achats non stockés
@@ -84,7 +86,34 @@ achats <- table_cge %>%
 valueBox(achats, icon = "fa-euro")
 ```
 
-Row {data-height=1000}
+
+Row {data-height=300}
+----------------------------------------------------------------------
+
+### Augmentation de dépénses de papier
+
+```{r}
+augmentation <- 29240093 / 28523497 * 100  - 100
+valueBox(round(augmentation, 1), icon = "fa-percent")
+```
+
+
+### Dépenses de papier
+
+```{r}
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(year) %>%
+  summarise(balance = sum(balance))  %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = year, y = balance)
+    ) + 
+  scale_y_continuous(labels = function(x) {format(x = x, scientific = FALSE, big.mark = " ")}) + 
+  theme_fivethirtyeight()
+```
+
+Row {data-height=600}
 ----------------------------------------------------------------------
 
 ### Répartition par ministère
@@ -109,9 +138,8 @@ table_cge %>%
   )
 ```
 
-Row {data-height=1000}
+Row {data-height=600}
 ----------------------------------------------------------------------
-
 
 ### Répartition par compte PCE
 
@@ -132,8 +160,6 @@ table_cge %>%
   datatable() %>% 
   DT::formatRound(columns = ~ balance, digits = 0, mark = " ")
 ```
-
-
 
 
 Row {data-height=1000}

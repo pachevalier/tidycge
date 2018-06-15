@@ -22,6 +22,28 @@ table_cge <- read_excel(path = "data-raw/2012 - 2017_Balances des comptes de l'Ã
 table_cge %>% 
   glimpse()
 
+library(ggplot2)
+
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(year) %>%
+  summarise(balance = sum(balance))  %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = year, y = balance)
+    ) + 
+  scale_y_continuous(labels = function(x) {format(x = x, scientific = FALSE, big.mark = " ")}) + 
+  theme_fivethirtyeight()
+
+
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(year) %>%
+  summarise(balance = sum(balance))
+
+
+
+
 table_cge %>% 
   filter(
     grepl(pattern = "^606", x = compte), 
