@@ -43,6 +43,23 @@ table_cge %>%
   ) %>%
   summarise(balance = format(sum(balance), scientific = FALSE, big.mark = " "))
 
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+  ) %>%
+  group_by(compte) %>%
+  summarise(balance = sum(balance)) %>%
+  left_join(
+    y = select(table_ncc, numero, libelle_long_complet_du_compte_cible), 
+    by = c("compte" = "numero")
+    ) %>%
+  select(compte,  libelle_long_complet_du_compte_cible, balance) %>%
+  arrange(desc(balance)) %>%
+  datatable() %>% 
+  DT::formatRound(columns = ~ balance, digits = 0, mark = " ")
+
+
 
 table_cge %>% 
   filter(
