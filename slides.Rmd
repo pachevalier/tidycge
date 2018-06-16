@@ -1,0 +1,226 @@
+---
+title: "Shower Presentations with R Markdown"
+author: https://github.com/mangothecat/rmdshower
+output:
+  rmdshower::shower_presentation:
+    self_contained: false
+    katex: true
+    ratio: 16x10
+---
+
+```{r setup, include=FALSE}
+library(DT)
+library(readr)
+library(dplyr)
+library(readxl)
+library(tricky)
+library(ggplot2)
+library(ggthemes)
+library(stringr)
+knitr::opts_chunk$set(echo = FALSE)
+table_cge <- read_excel(path = "data-raw/2012 - 2017_Balances des comptes de l'État.xlsx") %>% 
+  set_standard_names() %>%
+  tidyr::gather(
+    key = year, 
+    value = balance, -
+      c(postes, sous_postes, compte, nature_budgetaire, programme, libelle_ministere)
+    ) %>%
+    mutate(
+      year = as.numeric(
+        sub(
+          pattern = "balance\\_sortie\\_([[:digit:]]{4})", 
+          replacement = "\\1", 
+          x = year)
+        )
+    )
+
+table_ncc <- read_csv(
+  file = "data-raw/tidy_ncc.csv", 
+  col_types = cols(numero = col_character())
+  )
+
+french_formatting <- function (x) {
+  output <- stringr::str_trim(format(x, big.mark = " ", decimal.mark = ",", scientific = FALSE))
+  return(output)
+  }
+
+table_plr <- read_excel(path = "data-raw/PLR2017-Exec-Min_T2_HT2_ETPT-BG_BA.xlsx") %>%
+  set_standard_names() %>%
+  mutate(
+    etpt = parse_French_number(exec_etpt_2017_rap_2017)
+    ) 
+```
+
+# Où va mon argent ? 
+
+# Zoom sur les achats non stockés
+
+## Qui achète le plus ?
+
+## La Défense ;)
+
+```{r}
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+    ) %>%
+  group_by(libelle_ministere) %>%
+  summarise(
+    balance = sum(balance)
+  ) %>% 
+  arrange(desc(balance)) %>%
+  datatable() %>%
+  formatRound(
+    columns = ~ balance, 
+    mark = " ", 
+    dec.mark = ",", 
+    digit = 0
+  )
+```
+
+## Qu'est-ce qu'on achète le plus ?
+
+## De l'électricité 
+
+```{r}
+table_cge %>% 
+  filter(
+    grepl(pattern = "^606", x = compte), 
+    year == 2017
+  ) %>%
+  group_by(compte) %>%
+  summarise(balance = sum(balance)) %>%
+  left_join(
+    y = select(table_ncc, numero, libelle_long_complet_du_compte_cible), 
+    by = c("compte" = "numero")
+    ) %>%
+  select(compte,  libelle_long_complet_du_compte_cible, balance) %>%
+  arrange(desc(balance)) %>%
+  datatable() %>% 
+  DT::formatRound(columns = ~ balance, digits = 0, mark = " ")
+```
+
+# Est-ce qu'on dépense de moins en moins de papier ?
+
+## Pas vraiment :(
+
+```{r}
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(year) %>%
+  summarise(balance = sum(balance))  %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = year, y = balance)
+    ) + 
+  scale_y_continuous(labels = function(x) {format(x = x, scientific = FALSE, big.mark = " ")}) + 
+  theme_fivethirtyeight()
+```
+
+## Qui dépense le plus de papier ?
+
+## Bercy :)
+
+```{r}
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(libelle_ministere) %>%
+  summarise(balance = sum(balance)) %>%
+  arrange(desc(balance)) %>%
+  filter(is.na(libelle_ministere) == FALSE) %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = reorder(libelle_ministere, balance), y = balance)
+  ) + 
+  scale_y_continuous(labels = function(x) {format(x, scientific = FALSE, big.mark = " ")}) + 
+  coord_flip()
+```
+
+## Et si on rapporte au nombre d'agents ?
+
+## Les services du Premier ministre :(
+
+```{r}
+table_cge %>% 
+  filter(compte == "6066620000") %>%
+  group_by(libelle_ministere) %>%
+  summarise(balance = sum(balance)) %>%
+  left_join(
+    y = table_plr %>% 
+      group_by(ministere_au_1er_janvier_2017) %>%
+      summarise(
+        etpt = sum(etpt, na.rm = TRUE)
+        ), 
+    by = c("libelle_ministere" = "ministere_au_1er_janvier_2017")
+    ) %>%
+  filter(etpt != 0, is.na(etpt) == FALSE) %>%
+  mutate(balance_par_agent = balance / etpt) %>%
+  arrange(desc(balance_par_agent)) %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(
+      x = reorder(libelle_ministere, balance_par_agent), 
+      y = balance_par_agent
+      )
+    ) + 
+  coord_flip() + 
+  scale_x_discrete(name = "Ministère") + 
+  scale_y_continuous(name = "Dépense de papier par agent")
+```
+
+## C'est quand même bizarre
+
+## C'est quand même pas la faute de la DINSIC ? 
+
+## Ouf !
+
+```{r}
+table_cge %>% 
+  filter(
+    compte == "6066620000", 
+    libelle_ministere == "Services du Premier ministre"
+    ) %>%
+  group_by(programme) %>%
+  summarise(balance = sum(balance)) %>%
+  left_join(
+    y = table_plr %>%
+      filter(ministere_au_1er_janvier_2017 == "Services du Premier ministre") %>%
+      group_by(code_programme, programme) %>%
+      summarise(etpt = sum(etpt, na.rm = TRUE)) %>%
+      ungroup() %>%
+      mutate(code_programme = str_pad(as.character(code_programme), width = 4, side = "left", pad = 0 )), 
+    by = c("programme" = "code_programme")
+  ) %>%
+  filter(etpt != 0) %>%
+  mutate(balance_par_agent = balance / etpt) %>%
+  arrange(desc(balance_par_agent)) %>%
+  ggplot() + 
+  geom_col(
+    mapping = aes(x = reorder(programme.y, balance_par_agent), y = balance_par_agent)
+  ) + 
+  theme_fivethirtyeight() + 
+  scale_y_continuous(name = "Dépense de papier par agent") + 
+  scale_x_discrete(
+    name = "Programme", 
+    labels = function(x) {
+      lapply(strwrap(x, width = 30, simplify = FALSE), paste, collapse="\n")
+    }
+    ) + 
+  coord_flip()
+```
+
+## C'est la faute des services déconcentrés
+
+* Comment l'interpréter ?
+* Pas facile de comprendre
+* Votre collaboration est bienvenue :)
+
+## Pour aller plus loin
+
+### Merci 
+
+### Voir le site: https://pachevalier.github.io/tidycge/index.html#zoom-sur-le-papier
+
+### Me contacter : @pa_chevalier
+
